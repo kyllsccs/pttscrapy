@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 import time
 import pandas as pd
+import openpyxl
 
 class FetchPtt():
     def __init__(self, path, page_list, timerange):
@@ -10,20 +11,24 @@ class FetchPtt():
         self.timerange = timerange
         self.page_list = page_list
 
-    def page_link(path):
+    def page_link(path, n):
         response = requests.get(path)
         data_soup = BeautifulSoup(response.text, 'lxml')
         prev_link_part = data_soup.select('.btn-group.btn-group-paging a')
         page_link_list = [i.get('href') for i in prev_link_part]
         prev_page_link = f'https://www.ptt.cc{page_link_list[1]}'
         new_page_link = f'https://www.ptt.cc{page_link_list[3]}'
-        page_list = [prev_page_link, new_page_link]
-        # print(page_list)
-        return page_list
+        bordername = page_link_list[3].replace('/bbs/','').replace('/index.html', '')
+        page_num = int(''.join([x for x in prev_page_link if x.isdigit()]))
+        # print(page_num + 1)
+        page_count = [f'https://www.ptt.cc/bbs/{bordername}/index{page_num - i}.html' for i in range(n)]
+        page_count.insert(0, new_page_link)
+        print(page_count)
+        return page_count
     # 送出請求給ptt web
     def ptt_response(path_list, timerange):
+        save_data_list = []
         for j in path_list:
-            save_data_list = []
             response = requests.get(j)
             data_soup = BeautifulSoup(response.text, 'lxml')
             
@@ -47,9 +52,10 @@ class FetchPtt():
                     print('Status : 此文已被刪除.')
         df = pd.DataFrame(save_data_list, columns = ['timeStamp', 'Date', 'Author', 'Title', 'Link'])
         print(df)
+        df.to_excel('./test.xlsx', engine = 'openpyxl', index = None)
 
 
 if __name__ == '__main__':
-    path = 'https://www.ptt.cc/bbs/C_Chat/index.html'
-    a_list = FetchPtt.page_link(path)
-    FetchPtt.ptt_response(a_list, 3600)
+    path = 'https://www.ptt.cc/bbs/Wanted/index.html'
+    a_list = FetchPtt.page_link(path, 120)
+    FetchPtt.ptt_response(a_list, 864000)

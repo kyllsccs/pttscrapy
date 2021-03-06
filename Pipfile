@@ -8,6 +8,7 @@ bs4 = "*"
 requests = "*"
 pandas = "*"
 lxml = "*"
+openpyxl = "*"
 
 [dev-packages]
 
